@@ -1,0 +1,31 @@
+# Environment variables (DO NOT COMMIT)
+.env
+backend/.env
+frontend/.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.venv
+venv/
+ENV/
+
+# Node
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vite build
+frontend/dist/
+
+# Database (keep seed logic in code)
+backend/data/*.db-journal
+
+# OS files
+.DS_Store
+Thumbs.db
+
