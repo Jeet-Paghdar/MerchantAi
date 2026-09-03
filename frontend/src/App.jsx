@@ -88,7 +88,7 @@ function App() {
   const currentNavItems = portalMode === 'buyer' ? buyerNavItems : merchantNavItems;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8F9FA]">
+    <div className="h-screen flex flex-col bg-[#F8F9FA] overflow-hidden">
       <header className="bg-[#072654] text-white px-6 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">

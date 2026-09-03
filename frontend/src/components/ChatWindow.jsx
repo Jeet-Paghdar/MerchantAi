@@ -4,7 +4,6 @@ import MessageBubble from './MessageBubble';
 import ProductCard from './ProductCard';
 import TypingIndicator from './TypingIndicator';
 import PaymentGate from './PaymentGate';
-import AuditTrail from './AuditTrail';
 import { motion } from 'framer-motion';
 
 export default function ChatWindow({ sessionId, initialInput = null }) {
@@ -169,9 +168,6 @@ export default function ChatWindow({ sessionId, initialInput = null }) {
         </div>
       </div>
       
-      <div className="w-[30%] bg-[#F8F9FA] border-l border-gray-200 hidden md:block overflow-y-auto">
-        <AuditTrail sessionId={sessionId} />
-      </div>
 
       {orderInfo && (
         <PaymentGate 
