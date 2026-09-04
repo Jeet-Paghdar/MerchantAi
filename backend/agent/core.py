@@ -33,6 +33,7 @@ class AgentCore:
             self.client = None
         else:
             self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        self.models = tuple(dict.fromkeys((settings.GEMINI_MODEL, settings.GEMINI_FALLBACK_MODEL)))
         
         if self.session_id not in SESSION_HISTORIES:
             SESSION_HISTORIES[self.session_id] = []
@@ -114,11 +115,11 @@ class AgentCore:
         for _ in range(5):
             response = None
             last_error = None
-            for attempt in range(3):
+            for attempt, model in enumerate(self.models):
                 try:
                     response = await asyncio.wait_for(
                         self.client.aio.models.generate_content(
-                            model='gemini-flash-lite-latest',
+                            model=model,
                             contents=self.history,
                             config=types.GenerateContentConfig(
                                 system_instruction=SYSTEM_PROMPT,
@@ -141,10 +142,10 @@ class AgentCore:
                     self.history[history_length_before_request:] = []
                     return AgentResponse(text="I couldn't reach the AI service just now. Please try again shortly.", retryable=True)
 
-                if attempt < 2:
-                    # Brief exponential backoff with jitter avoids immediately
-                    # retrying into a capacity spike.
-                    await asyncio.sleep((0.5 * (2 ** attempt)) + random.uniform(0, 0.25))
+                if attempt < len(self.models) - 1:
+                    # Brief backoff avoids immediately retrying into a capacity
+                    # spike before trying the configured fallback model.
+                    await asyncio.sleep(0.5 + random.uniform(0, 0.25))
 
             if response is None:
                 self.history[history_length_before_request:] = []
