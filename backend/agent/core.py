@@ -1,6 +1,5 @@
 import os
 import asyncio
-import random
 from google import genai
 from google.genai import types
 from agent.prompts import SYSTEM_PROMPT
@@ -15,16 +14,9 @@ class AgentResponse:
     cart_update: dict = None
     order_info: dict = None
     audit_entries: list = field(default_factory=list)
-    retryable: bool = False
 
 # Global in-memory storage for session histories (for demo purposes)
 SESSION_HISTORIES = {}
-
-
-def _is_temporary_provider_error(error: Exception) -> bool:
-    """Return whether a Gemini error is worth retrying shortly."""
-    message = str(error).upper()
-    return any(marker in message for marker in ("503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED"))
 
 class AgentCore:
     def __init__(self, session_id: str):
@@ -33,7 +25,6 @@ class AgentCore:
             self.client = None
         else:
             self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
-        self.models = tuple(dict.fromkeys((settings.GEMINI_MODEL, settings.GEMINI_FALLBACK_MODEL)))
         
         if self.session_id not in SESSION_HISTORIES:
             SESSION_HISTORIES[self.session_id] = []
@@ -105,58 +96,35 @@ class AgentCore:
             wrapped_apply_discount, wrapped_create_order, wrapped_check_payment_status
         ]
 
-        # Keep a checkpoint so a failed provider call does not leave an unanswered
-        # message in the customer's next conversation turn.
-        history_length_before_request = len(self.history)
-
         # Add user message to history
         self.history.append(types.Content(role="user", parts=[types.Part.from_text(text=user_message)]))
         
         for _ in range(5):
-            response = None
-            last_error = None
-            for attempt, model in enumerate(self.models):
-                try:
-                    response = await asyncio.wait_for(
-                        self.client.aio.models.generate_content(
-                            model=model,
-                            contents=self.history,
-                            config=types.GenerateContentConfig(
-                                system_instruction=SYSTEM_PROMPT,
-                                tools=tool_funcs,
-                                temperature=0.0,
-                                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
-                            )
-                        ),
-                        timeout=12.0
-                    )
-                    break
-                except asyncio.TimeoutError:
-                    last_error = None
-                    is_temporary = True
-                except Exception as error:
-                    last_error = error
-                    is_temporary = _is_temporary_provider_error(error)
-
-                if not is_temporary:
-                    self.history[history_length_before_request:] = []
-                    return AgentResponse(text="I couldn't reach the AI service just now. Please try again shortly.", retryable=True)
-
-                if attempt < len(self.models) - 1:
-                    # Brief backoff avoids immediately retrying into a capacity
-                    # spike before trying the configured fallback model.
-                    await asyncio.sleep(0.5 + random.uniform(0, 0.25))
-
-            if response is None:
-                self.history[history_length_before_request:] = []
-                if last_error and ("429" in str(last_error) or "RESOURCE_EXHAUSTED" in str(last_error).upper()):
-                    message = "The AI service is busy right now. Please wait a moment and try again."
-                else:
-                    message = "The AI service is temporarily unavailable. Please try again in a moment."
-                return AgentResponse(text=message, retryable=True)
+            try:
+                response = await asyncio.wait_for(
+                    self.client.aio.models.generate_content(
+                        model='gemini-flash-lite-latest',
+                        contents=self.history,
+                        config=types.GenerateContentConfig(
+                            system_instruction=SYSTEM_PROMPT,
+                            tools=tool_funcs,
+                            temperature=0.0,
+                            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
+                        )
+                    ),
+                    timeout=12.0
+                )
+            except asyncio.TimeoutError:
+                return AgentResponse(text="⏳ AI response timed out. The Gemini API took longer than expected. Please try re-sending your message!")
+            except Exception as e:
+                err_str = str(e)
+                if "503" in err_str or "UNAVAILABLE" in err_str.upper():
+                    return AgentResponse(text="The AI service is temporarily unavailable. Please try again in a moment.")
+                if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                    return AgentResponse(text="⏳ Gemini API rate limit reached (5 req/min free tier). Please wait 15 seconds and try again!")
+                return AgentResponse(text="The AI service is temporarily unavailable. Please try again in a moment.")
 
             if not response.candidates:
-                self.history[history_length_before_request:] = []
                 return AgentResponse(text="I encountered an error generating a response.")
 
             model_message = response.candidates[0].content

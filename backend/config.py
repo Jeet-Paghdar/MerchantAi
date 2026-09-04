@@ -10,8 +10,6 @@ class Settings(BaseSettings):
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.5-flash"
-    GEMINI_FALLBACK_MODEL: str = "gemini-2.5-flash-lite"
     class Config:
         env_file = env_path
         extra = "ignore"
