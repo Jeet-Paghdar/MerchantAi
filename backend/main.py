@@ -9,6 +9,8 @@ from campaigns.router import router as campaigns_router
 from pydantic import BaseModel
 from agent.core import AgentCore
 import random
+import asyncio
+import httpx
 
 import os
 from fastapi.staticfiles import StaticFiles
@@ -29,10 +31,32 @@ app.include_router(checkout_router, prefix="/api")
 app.include_router(audit_router, prefix="/api")
 app.include_router(campaigns_router, prefix="/api")
 
+async def keepalive():
+    """
+    Silent background task: pings own /api/health every 10 minutes.
+    Prevents Render free-tier cold starts by keeping the server warm.
+    Only activates when RENDER_EXTERNAL_URL is set (i.e. in production).
+    Completely invisible to the frontend.
+    """
+    base_url = os.environ.get("RENDER_EXTERNAL_URL", "").strip()
+    if not base_url:
+        return  # Not on Render, skip (local dev)
+    
+    await asyncio.sleep(60)  # wait 1 min after startup before first ping
+    while True:
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                await client.get(f"{base_url}/api/health")
+        except Exception:
+            pass  # silently ignore any errors
+        await asyncio.sleep(600)  # ping every 10 minutes
+
 @app.on_event("startup")
 async def startup_event():
     await init_db()
     await seed_products()
+    asyncio.create_task(keepalive())  # start keepalive silently in background
+
 
 @app.get("/api/health")
 async def health_check():
