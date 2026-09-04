@@ -12,17 +12,23 @@
 <h3 align="center">Autonomous Agentic Commerce Infrastructure</h3>
 
 <p align="center">
+  <a href="https://merchantai-smda.onrender.com" target="_blank">
+    <img src="https://img.shields.io/badge/LIVE_DEMO-https%3A%2F%2Fmerchantai--smda.onrender.com-0B69FF?style=for-the-badge&logo=render&logoColor=white" alt="Live Demo Link" />
+  </a>
+</p>
+
+<p align="center">
   <em>A production-grade agentic commerce system for e-commerce merchants - featuring deterministic hard-coded guardrails, dual-portal architecture, real-time audit logging, automated cart recovery campaigns, and native Razorpay integration.</em>
 </p>
 
 <p align="center">
+  <a href="https://merchantai-smda.onrender.com" target="_blank"><strong>Live Demo</strong></a> &bull;
   <a href="#project-overview">Project Overview</a> &bull;
   <a href="#key-features">Key Features</a> &bull;
   <a href="#system-architecture">Architecture</a> &bull;
   <a href="#agentic-guardrails">Guardrails & Bounds</a> &bull;
   <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#project-structure">Project Structure</a> &bull;
-  <a href="#live-deployment">Live Deployment</a>
+  <a href="#project-structure">Project Structure</a>
 </p>
 
 ---
