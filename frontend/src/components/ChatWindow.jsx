@@ -152,7 +152,7 @@ export default function ChatWindow({ sessionId, initialInput = null }) {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyPress={e => e.key === 'Enter' && handleSend()}
-              placeholder="Ask for products, e.g. 'Show me Nike shoes' or 'Find a budget laptop'..."
+              placeholder="Ask anything, e.g. 'Find me a phone under ₹15,000' or 'Best wireless earbuds'..."
               className="flex-1 bg-white/10 text-white placeholder-white/50 rounded-full px-6 py-3 outline-none focus:ring-2 focus:ring-[#0B69FF]"
             />
             <button
