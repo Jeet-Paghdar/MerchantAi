@@ -49,39 +49,9 @@ Traditional chat assistants often hallucinate discounts or make unauthorized com
 
 ## System Architecture
 
-`
-+-----------------------------------------------------------------------+
-|                            MerchantAI System                          |
-+-----------------------------------------------------------------------+
-|                                                                       |
-|   +-----------------------+               +-----------------------+   |
-|   |   Customer Experience |               |    Merchant Console   |   |
-|   |  - Storefront Catalog |               |  - Revenue Dashboard  |   |
-|   |  - Conversational AI  |               |  - Agent Arena (x402) |   |
-|   |  - Direct Checkout    |               |  - Orders & Audit Log |   |
-|   +-----------+-----------+               +-----------+-----------+   |
-|               |                                       |               |
-|               +-------------------+-------------------+               |
-|                                   |                                   |
-|                                   v                                   |
-|                     +---------------------------+                     |
-|                     |    FastAPI Async Engine   |                     |
-|                     +-------------+-------------+                     |
-|                                   |                                   |
-|        +--------------------------+--------------------------+        |
-|        |                          |                          |        |
-|        v                          v                          v        |
-|  +-----------+            +---------------+            +-----------+  |
-|  |  Gemini   |            | Bounds & Gate |            | Razorpay  |  |
-|  | Agent Core|            | Guard Engine  |            | SDK Engine|  |
-|  +-----------+            +---------------+            +-----------+  |
-|                                   |                                   |
-|                                   v                                   |
-|                      +--------------------------+                     |
-|                      |  SQLite / Audit Database |                     |
-|                      +--------------------------+                     |
-+-----------------------------------------------------------------------+
-`
+<p align="center">
+  <img src="docs/architecture.jpg" alt="MerchantAI Platform Architecture" width="100%" />
+</p>
 
 ---
 
@@ -160,6 +130,8 @@ MerchantAi/
 │   ├── config.py          # Environment settings and guardrail parameters
 │   ├── database.py        # SQLAlchemy database initialization
 │   └── main.py            # FastAPI entry point and static asset server
+├── docs/
+│   └── architecture.jpg   # Platform architecture diagram
 ├── frontend/
 │   ├── src/
 │   │   ├── components/    # Storefront, ChatWindow, PaymentGate, AuditTrail
