@@ -1,4 +1,4 @@
-﻿<p align="center">
+<p align="center">
   <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11" />
   <img src="https://img.shields.io/badge/FastAPI-0.110.0-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React-18.2.0-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 18" />
@@ -79,70 +79,70 @@ MerchantAI uses a multi-layered guardrail engine to prevent unauthorized agent b
 ### Installation
 
 1. **Clone the Repository**
-`ash
+```bash
 git clone https://github.com/Jeet-Paghdar/MerchantAi.git
 cd MerchantAi
-`
+```
 
 2. **Backend Setup**
-`ash
+```bash
 cd backend
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-`
+```
 
 3. **Frontend Setup**
-`ash
+```bash
 cd ../frontend
 npm install
 npm run build
-`
+```
 
 4. **Environment Variables**
-Create .env in the root directory:
-`env
+Create `.env` in the root directory:
+```env
 GEMINI_API_KEY=your_gemini_api_key
 RAZORPAY_KEY_ID=your_razorpay_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-`
+```
 
 5. **Start Application**
-`ash
+```bash
 cd ../backend
 uvicorn main:app --host 0.0.0.0 --port 8000
-`
+```
 
-Open http://localhost:8000 in your web browser.
+Open `http://localhost:8000` in your web browser.
 
 ---
 
 ## Project Structure
 
-`
+```text
 MerchantAi/
 ├── backend/
-│   ├── agent/             # Gemini Agent core, tools, prompts, and bounds
-│   ├── audit/             # Audit logger and audit trail API endpoints
-│   ├── campaigns/         # Cart recovery orchestrator and messaging engine
-│   ├── catalog/           # Product models, seed data, and catalog API
-│   ├── checkout/          # Razorpay integration, cart models, and checkout router
-│   ├── config.py          # Environment settings and guardrail parameters
-│   ├── database.py        # SQLAlchemy database initialization
-│   └── main.py            # FastAPI entry point and static asset server
+│   ├── agent/                 # Gemini Agent core, tools, prompts, and bounds
+│   ├── audit/                 # Audit logger and audit trail API endpoints
+│   ├── campaigns/             # Cart recovery orchestrator and messaging engine
+│   ├── catalog/               # Product models, seed data, and catalog API
+│   ├── checkout/              # Razorpay integration, cart models, and checkout router
+│   ├── config.py              # Environment settings and guardrail parameters
+│   ├── database.py            # SQLAlchemy database initialization
+│   └── main.py                # FastAPI entry point and static asset server
 ├── docs/
-│   └── architecture.jpg   # Platform architecture diagram
+│   └── architecture.jpg       # Platform architecture diagram
 ├── frontend/
 │   ├── src/
-│   │   ├── components/    # Storefront, ChatWindow, PaymentGate, AuditTrail
-│   │   ├── api.js         # API integration client
-│   │   └── App.jsx        # Dual-portal state and main layout manager
-│   ├── package.json       # Node dependencies
-│   └── vite.config.js     # Vite configuration
-├── build.sh               # Render deployment build script
-├── render.yaml            # Render blueprint specification
-└── README.md              # Project documentation
-`
+│   │   ├── components/        # Storefront, ChatWindow, PaymentGate, AuditTrail
+│   │   ├── api.js             # API integration client
+│   │   └── App.jsx            # Dual-portal state and main layout manager
+│   ├── package.json           # Node dependencies
+│   └── vite.config.js         # Vite configuration
+├── build.sh                   # Render deployment build script
+├── render.yaml                # Render blueprint specification
+└── README.md                  # Project documentation
+```
 
 ---
 
