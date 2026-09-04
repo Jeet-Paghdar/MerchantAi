@@ -86,7 +86,7 @@ export default function StoreFrontView({ sessionId, onOpenAssistant }) {
 
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => onOpenAssistant("Show me running shoes or sneakers")}
+              onClick={() => onOpenAssistant("Show me the best deals today")}
               className="bg-gradient-to-r from-[#0B69FF] to-blue-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
             >
               <span>✨ Ask AI Shopper</span>
