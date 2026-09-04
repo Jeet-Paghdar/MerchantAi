@@ -39,7 +39,7 @@ export default function StoreFrontView({ sessionId, onOpenAssistant }) {
 
   const handleQuickAdd = async (product) => {
     try {
-      await api.sendMessage(sessionId, `Add ${product.name} to cart`);
+      await api.addToCart(sessionId, product.id, 1);
       setAddedItemName(product.name);
       setTimeout(() => setAddedItemName(null), 2500);
       fetchCart();
@@ -48,7 +48,7 @@ export default function StoreFrontView({ sessionId, onOpenAssistant }) {
     }
   };
 
-  const categories = ['All', 'Phones', 'Audio', 'Footwear', 'Laptops', 'Accessories'];
+  const categories = ['All', 'Phones', 'Audio', 'Laptops', 'Accessories'];
 
   const filteredProducts = products.filter(p => {
     const matchesCat = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();

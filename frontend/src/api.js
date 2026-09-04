@@ -63,5 +63,13 @@ export const api = {
   getCart: async (sessionId) => {
     const res = await fetch(`/api/checkout/cart/?session_id=${sessionId}`);
     return res.json();
+  },
+  addToCart: async (sessionId, productId, quantity = 1) => {
+    const res = await fetch('/api/checkout/cart/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, product_id: productId, quantity })
+    });
+    return res.json();
   }
 };
