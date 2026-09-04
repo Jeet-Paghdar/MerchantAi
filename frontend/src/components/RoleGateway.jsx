@@ -10,9 +10,7 @@ export default function RoleGateway({ onSelectRole }) {
       <div className="max-w-4xl w-full z-10">
         {/* Header Branding */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-1.5 rounded-full border border-white/15 mb-4 shadow-sm">
-            <span className="text-xs font-bold text-white uppercase tracking-wider">Razorpay Agentic Commerce Track 01</span>
-          </div>
+
           <div className="flex items-center justify-center gap-3 mb-2">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#0B69FF"/>
