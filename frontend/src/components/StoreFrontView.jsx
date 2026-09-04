@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
+import PaymentGate from './PaymentGate';
 
 export default function StoreFrontView({ sessionId, onOpenAssistant }) {
   const [products, setProducts] = useState([]);
@@ -8,6 +9,8 @@ export default function StoreFrontView({ sessionId, onOpenAssistant }) {
   const [cart, setCart] = useState({ items: [], total: 0 });
   const [search, setSearch] = useState('');
   const [addedItemName, setAddedItemName] = useState(null);
+  const [orderInfo, setOrderInfo] = useState(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -45,6 +48,19 @@ export default function StoreFrontView({ sessionId, onOpenAssistant }) {
       fetchCart();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (cart.items.length === 0) return;
+    setCheckoutLoading(true);
+    try {
+      const order = await api.createOrder(sessionId);
+      setOrderInfo(order);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCheckoutLoading(false);
     }
   };
 
@@ -100,6 +116,15 @@ export default function StoreFrontView({ sessionId, onOpenAssistant }) {
                 </span>
               )}
             </div>
+            {cart.items.length > 0 && (
+              <button
+                onClick={handleCheckout}
+                disabled={checkoutLoading}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-70"
+              >
+                {checkoutLoading ? '⏳ Processing...' : '💳 Checkout'}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -149,7 +174,7 @@ export default function StoreFrontView({ sessionId, onOpenAssistant }) {
                 <span>✅</span> Added <strong>{addedItemName}</strong> to cart via MerchantAI!
               </div>
               <button 
-                onClick={() => onOpenAssistant("Review my cart and proceed to checkout")}
+                onClick={handleCheckout}
                 className="text-xs font-bold text-emerald-900 underline ml-4 hover:opacity-80 cursor-pointer"
               >
                 Go to Checkout →
@@ -202,6 +227,13 @@ export default function StoreFrontView({ sessionId, onOpenAssistant }) {
           ))}
         </div>
       </div>
+      {orderInfo && (
+        <PaymentGate
+          orderInfo={orderInfo}
+          sessionId={sessionId}
+          onClose={() => { setOrderInfo(null); fetchCart(); }}
+        />
+      )}
     </div>
   );
 }
