@@ -149,5 +149,5 @@ MerchantAi/
 ## Live Deployment
 
 - **Live URL**: [https://merchantai-smda.onrender.com](https://merchantai-smda.onrender.com)
-- **Hosted On**: Render Cloud (Singapore Region)
+- **Hosted On**: Render Cloud
 - **Payment Engine**: Razorpay Test Mode
