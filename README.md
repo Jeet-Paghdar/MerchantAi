@@ -1,125 +1,181 @@
-# MerchantAI ?
-### Autonomous Agentic Commerce Engine for Razorpay (Track 01)
+﻿<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11" />
+  <img src="https://img.shields.io/badge/FastAPI-0.110.0-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React-18.2.0-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 18" />
+  <img src="https://img.shields.io/badge/Razorpay-v1.0-0B69FF?style=for-the-badge&logo=razorpay&logoColor=white" alt="Razorpay" />
+  <img src="https://img.shields.io/badge/Gemini_AI-Flash_Lite-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini AI" />
+  <img src="https://img.shields.io/badge/Render-Cloud_Deployed-46E3B7?style=for-the-badge&logo=render&logoColor=black" alt="Render" />
+</p>
 
-> **Built for Razorpay AI Hackathon (Track 01: Agentic Commerce)**  
-> ?? **Live Demo:** [https://merchantai.onrender.com](https://merchantai.onrender.com)  
-> ?? **5-Minute Video Walkthrough:** [Your Video Link Here]
+<h1 align="center">MerchantAI</h1>
 
----
+<h3 align="center">Autonomous Agentic Commerce Infrastructure</h3>
 
-## ?? Executive Summary
+<p align="center">
+  <em>A production-grade agentic commerce system for e-commerce merchants - featuring deterministic hard-coded guardrails, dual-portal architecture, real-time audit logging, automated cart recovery campaigns, and native Razorpay integration.</em>
+</p>
 
-Razorpay is the backbone of Indian e-commerce. However, merchants lose **70% of potential sales** to abandoned carts, struggle to increase **Average Order Value (AOV)**, and are completely unprepared for the upcoming shift toward **autonomous AI-driven machine commerce (NPCI UAP / x402 protocol)**.
-
-**MerchantAI** is an embeddable B2B Agentic Commerce engine that turns any merchant store into an intelligent, autonomous commerce hub. It increases merchant revenue through conversational upsell and automated recovery campaigns, while strictly enforcing **hardcoded programmatic bounds** so merchants never sell at a loss.
-
----
-
-## ??? Dual-Portal Architecture
-
-MerchantAI cleanly separates the shopping experience from the merchant governance layer:
-
-```
-                  +---------------------------------+
-                  �    MerchantAI Role Gateway      �
-                  +---------------------------------+
-                          �                 �
-             +------------?-------+   +-----?------------------+
-             �  ??? Buyer Portal   �   �  ?? Merchant Console   �
-             �   (Customer View)  �   �   (Store Owner View)   �
-             +--------------------+   +------------------------+
-                          �                 �
-             � TechBazaar Storefront        � AI Revenue & Recovery Metrics
-             � AI Shopping Copilot          � Margin Bound Configuration
-             � Cart & Upsell Engine         � Autonomous Agent Arena (x402)
-             � In-App Razorpay Checkout     � Compliance Audit Trail (DB)
-```
+<p align="center">
+  <a href="#project-overview">Project Overview</a> &bull;
+  <a href="#key-features">Key Features</a> &bull;
+  <a href="#system-architecture">Architecture</a> &bull;
+  <a href="#agentic-guardrails">Guardrails & Bounds</a> &bull;
+  <a href="#quick-start">Quick Start</a> &bull;
+  <a href="#project-structure">Project Structure</a> &bull;
+  <a href="#live-deployment">Live Deployment</a>
+</p>
 
 ---
 
-## ??? The Four Architectural Pillars ("The Bar")
+## Project Overview
 
-1. **Bounded:**
-   - LLMs can hallucinate; financial transactions cannot.
-   - All financial boundaries (`MAX_DISCOUNT_PERCENT = 15%`, `MIN_MARGIN = 8%`, `MAX_ORDER_AMOUNT = 50,000`) are evaluated strictly in **deterministic Python code (`bounds.py`)**, completely decoupled from the LLM prompt.
+MerchantAI is an autonomous commerce platform built for modern merchants. It bridges conversational AI and payment infrastructure by wrapping LLM interactions inside strict, code-enforced guardrails.
 
-2. **Gated:**
-   - An AI cannot charge a customer without explicit human-in-the-loop authorization.
-   - The conversational agent prepares the order and calculates the discount, but transfers execution to a dedicated **Payment Gate Modal**, requiring the customer to review the itemized breakdown and confirm payment via the official **Razorpay Checkout SDK**.
-
-3. **Audited:**
-   - Every agent reasoning step, catalog query, discount calculation, boundary check, and Razorpay HMAC signature verification is immutably recorded in an SQLite **Audit Trail**.
-   - Available in real-time on the **Merchant Console** for compliance verification.
-
-4. **Graceful Failure Handling:**
-   - If an item is out of stock, budget limits are exceeded, or Gemini API rate limits (HTTP 429) occur, the agent falls back to friendly conversational recovery without crashing the cart session.
+Traditional chat assistants often hallucinate discounts or make unauthorized commitments. MerchantAI prevents this by routing all actions through a deterministic **Bounds Checker** and **Payment Gate**, ensuring zero loss of revenue while providing a fluid customer shopping experience.
 
 ---
 
-## ??? Tech Stack
+## Key Features
 
-- **Backend:** Python 3.11, FastAPI, SQLAlchemy (aiosqlite), Uvicorn, Google GenAI SDK (`gemini-flash-lite-latest`), Razorpay Python SDK.
-- **Frontend:** React 19, Vite, TailwindCSS v4, Framer Motion, Razorpay Standard Checkout.js.
-- **Protocol:** Simulated x402 / NPCI UAP Commerce Wire for agent-to-agent autonomous negotiation.
+- **Dual-Portal Role Gateway**: Instant switching between Customer Storefront (Buyer) and Merchant Console (Merchant) without re-authenticating.
+- **Conversational Copilot**: Powered by Gemini API with function calling to search catalogs, answer product queries, apply discounts, and manage cart state.
+- **Direct & AI Checkout**: Customers can check out directly from the storefront or through the conversational assistant using native Razorpay Checkout JS.
+- **Hard-Coded Guardrails**: Bounded discount percentages (max 15%), bounded cart quantities (max 5 items), and bounded order totals enforced at the code layer.
+- **Human-in-the-Loop Gate**: All financial transactions require explicit human confirmation before invocation of payment endpoints.
+- **Real-Time Audit Trail**: Every search, cart modification, discount application, and payment signature verification is logged with structured reasoning and timestamp.
+- **Cart Recovery Orchestrator**: Automated background campaign engine that identifies abandoned carts, calculates safe recovery discounts, and dispatches personalized customer recovery messages.
 
 ---
 
-## ?? Running Locally
+## System Architecture
+
+`
++-----------------------------------------------------------------------+
+|                            MerchantAI System                          |
++-----------------------------------------------------------------------+
+|                                                                       |
+|   +-----------------------+               +-----------------------+   |
+|   |   Customer Experience |               |    Merchant Console   |   |
+|   |  - Storefront Catalog |               |  - Revenue Dashboard  |   |
+|   |  - Conversational AI  |               |  - Agent Arena (x402) |   |
+|   |  - Direct Checkout    |               |  - Orders & Audit Log |   |
+|   +-----------+-----------+               +-----------+-----------+   |
+|               |                                       |               |
+|               +-------------------+-------------------+               |
+|                                   |                                   |
+|                                   v                                   |
+|                     +---------------------------+                     |
+|                     |    FastAPI Async Engine   |                     |
+|                     +-------------+-------------+                     |
+|                                   |                                   |
+|        +--------------------------+--------------------------+        |
+|        |                          |                          |        |
+|        v                          v                          v        |
+|  +-----------+            +---------------+            +-----------+  |
+|  |  Gemini   |            | Bounds & Gate |            | Razorpay  |  |
+|  | Agent Core|            | Guard Engine  |            | SDK Engine|  |
+|  +-----------+            +---------------+            +-----------+  |
+|                                   |                                   |
+|                                   v                                   |
+|                      +--------------------------+                     |
+|                      |  SQLite / Audit Database |                     |
+|                      +--------------------------+                     |
++-----------------------------------------------------------------------+
+`
+
+---
+
+## Agentic Guardrails
+
+MerchantAI uses a multi-layered guardrail engine to prevent unauthorized agent behavior:
+
+| Guardrail Layer | Enforcement Mechanism | Limit / Threshold |
+|---|---|---|
+| Cart Quantity Bounds | Hard-Coded Validation | Maximum 5 items per single product |
+| Discount Bounds | Hard-Coded Margin Check | Maximum 15 percent total discount |
+| Negotiation Limit | State Machine Counter | Maximum 3 rounds of price negotiation |
+| Order Amount Limit | System Boundary Rule | Maximum 50,000 INR order value |
+| Payment Gate | Explicit User Confirmation | Required before creating Razorpay Order |
+
+---
+
+## Quick Start
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.11+
 - Node.js 18+
-- Active Google Gemini API Key
-- Razorpay Test Key ID & Secret
+- Git
 
-### 1. Clone & Configure
-```bash
-git clone https://github.com/YOUR_USERNAME/merchantai.git
-cd merchantai
-```
+### Installation
 
-Create `.env` in `backend/.env` (or root):
-```env
-RAZORPAY_KEY_ID=rzp_test_xxxxxx
-RAZORPAY_KEY_SECRET=xxxxxx
-GEMINI_API_KEY=xxxxxx
-```
+1. **Clone the Repository**
+`ash
+git clone https://github.com/Jeet-Paghdar/MerchantAi.git
+cd MerchantAi
+`
 
-### 2. Run Backend
-```bash
+2. **Backend Setup**
+`ash
 cd backend
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
-python -m uvicorn main:app --reload --port 8000
-```
+`
 
-### 3. Run Frontend
-```bash
-cd frontend
+3. **Frontend Setup**
+`ash
+cd ../frontend
 npm install
-npm run dev
-```
-Open `http://localhost:5173` in your browser.
+npm run build
+`
+
+4. **Environment Variables**
+Create .env in the root directory:
+`env
+GEMINI_API_KEY=your_gemini_api_key
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+`
+
+5. **Start Application**
+`ash
+cd ../backend
+uvicorn main:app --host 0.0.0.0 --port 8000
+`
+
+Open http://localhost:8000 in your web browser.
 
 ---
 
-## ?? 1-Click Deployment (Render)
+## Project Structure
 
-This repository includes a native `render.yaml` and `build.sh` blueprint for all-in-one unified hosting:
-
-1. Push your code to GitHub.
-2. Go to [Render.com](https://render.com/) -> **New** -> **Blueprint**.
-3. Connect your GitHub repository.
-4. Add your Environment Variables:
-   - `GEMINI_API_KEY`
-   - `RAZORPAY_KEY_ID`
-   - `RAZORPAY_KEY_SECRET`
-5. Click **Deploy**. Render will automatically build the React frontend, package it with FastAPI, and deploy it to a single live URL!
+`
+MerchantAi/
+├── backend/
+│   ├── agent/             # Gemini Agent core, tools, prompts, and bounds
+│   ├── audit/             # Audit logger and audit trail API endpoints
+│   ├── campaigns/         # Cart recovery orchestrator and messaging engine
+│   ├── catalog/           # Product models, seed data, and catalog API
+│   ├── checkout/          # Razorpay integration, cart models, and checkout router
+│   ├── config.py          # Environment settings and guardrail parameters
+│   ├── database.py        # SQLAlchemy database initialization
+│   └── main.py            # FastAPI entry point and static asset server
+├── frontend/
+│   ├── src/
+│   │   ├── components/    # Storefront, ChatWindow, PaymentGate, AuditTrail
+│   │   ├── api.js         # API integration client
+│   │   └── App.jsx        # Dual-portal state and main layout manager
+│   ├── package.json       # Node dependencies
+│   └── vite.config.js     # Vite configuration
+├── build.sh               # Render deployment build script
+├── render.yaml            # Render blueprint specification
+└── README.md              # Project documentation
+`
 
 ---
 
-## ?? "What Broke at 2 AM" (Hackathon War Story)
+## Live Deployment
 
-> *"During integration testing, we migrated our database models to support dynamic cart-level discounts. While SQLAlchemy updated the Python schema, the underlying SQLite database file did not alter existing tables automatically. This caused a silent `sqlite3.OperationalError: no such column: carts.discount_percent` during live cart creation, triggering our agent fallback handler!
->
-> We quickly implemented an automated migration script on startup to run `ALTER TABLE carts ADD COLUMN discount_percent FLOAT DEFAULT 0.0;` if absent, ensuring seamless backward compatibility without data loss."*
-
+- **Live URL**: [https://merchantai-smda.onrender.com](https://merchantai-smda.onrender.com)
+- **Hosted On**: Render Cloud (Singapore Region)
+- **Payment Engine**: Razorpay Test Mode
