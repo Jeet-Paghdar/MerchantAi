@@ -114,7 +114,7 @@ export default function RoleGateway({ onSelectRole }) {
 
         {/* Footer Note */}
         <div className="mt-8 text-center text-xs text-gray-400">
-          Tip for judges: You can switch between portals anytime using the button in the top navigation bar.
+          Tip: You can switch between portals anytime using the button in the top navigation bar.
         </div>
       </div>
     </div>
