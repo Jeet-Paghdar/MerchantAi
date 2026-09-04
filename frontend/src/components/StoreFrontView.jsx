@@ -56,9 +56,21 @@ export default function StoreFrontView({ sessionId, onOpenAssistant }) {
     setCheckoutLoading(true);
     try {
       const order = await api.createOrder(sessionId);
-      setOrderInfo(order);
+      if (order && order.razorpay_order_id) {
+        setOrderInfo({
+          ...order,
+          items: cart.items.map(item => ({
+            name: products.find(p => p.id === item.product_id)?.name || `Product #${item.product_id}`,
+            quantity: item.quantity,
+            price: item.price
+          }))
+        });
+      } else if (order && order.detail) {
+        alert(`Checkout issue: ${order.detail}`);
+      }
     } catch (err) {
       console.error(err);
+      alert("Failed to create order. Please try adding item to cart again.");
     } finally {
       setCheckoutLoading(false);
     }
@@ -232,6 +244,8 @@ export default function StoreFrontView({ sessionId, onOpenAssistant }) {
           orderInfo={orderInfo}
           sessionId={sessionId}
           onClose={() => { setOrderInfo(null); fetchCart(); }}
+          onSuccess={(msg) => { alert(msg); setOrderInfo(null); fetchCart(); }}
+          onFailure={(msg) => { alert(msg); }}
         />
       )}
     </div>

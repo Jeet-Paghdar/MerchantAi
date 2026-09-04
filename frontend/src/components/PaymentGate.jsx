@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { api } from '../api';
 
-export default function PaymentGate({ orderInfo, sessionId, onClose, onSuccess, onFailure }) {
+export default function PaymentGate({ orderInfo, sessionId, onClose, onSuccess = () => {}, onFailure = () => {} }) {
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {

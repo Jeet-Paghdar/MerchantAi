@@ -61,7 +61,7 @@ export const api = {
     return res.json();
   },
   getCart: async (sessionId) => {
-    const res = await fetch(`/api/checkout/cart/?session_id=${sessionId}`);
+    const res = await fetch(`/api/checkout/cart/${sessionId}`);
     return res.json();
   },
   addToCart: async (sessionId, productId, quantity = 1) => {

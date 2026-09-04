@@ -5,6 +5,7 @@ from sqlalchemy.future import select
 from pydantic import BaseModel
 from database import get_db
 from checkout.models import Cart, CartItem, Order, Payment, OrderStatus, OrderResponse, CartResponse, CartItemResponse
+from catalog.models import Product
 from checkout.razorpay_client import razorpay_client
 from config import settings
 from audit.logger import AuditLogger
@@ -14,6 +15,11 @@ router = APIRouter(prefix="/checkout", tags=["Checkout"])
 @router.get("/config")
 async def get_checkout_config():
     return {"razorpay_key_id": settings.RAZORPAY_KEY_ID}
+
+class AddToCartRequest(BaseModel):
+    session_id: str
+    product_id: int
+    quantity: int = 1
 
 class CreateOrderRequest(BaseModel):
     session_id: str
@@ -106,8 +112,32 @@ async def get_order_status(order_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
-@router.get("/cart/{session_id}", response_model=CartResponse)
-async def get_cart(session_id: str, db: AsyncSession = Depends(get_db)):
+@router.post("/cart/add")
+async def add_to_cart(req: AddToCartRequest, db: AsyncSession = Depends(get_db)):
+    product = (await db.execute(select(Product).filter(Product.id == req.product_id))).scalars().first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    cart = (await db.execute(select(Cart).filter(Cart.session_id == req.session_id))).scalars().first()
+    if not cart:
+        cart = Cart(session_id=req.session_id)
+        db.add(cart)
+        await db.commit()
+        await db.refresh(cart)
+        
+    item = (await db.execute(select(CartItem).filter(CartItem.cart_id == cart.id, CartItem.product_id == req.product_id))).scalars().first()
+    if item:
+        item.quantity += req.quantity
+    else:
+        item = CartItem(cart_id=cart.id, product_id=req.product_id, quantity=req.quantity, price=product.price)
+        db.add(item)
+        
+    await db.commit()
+    return {"status": "success", "cart_id": cart.id}
+
+async def _fetch_cart_impl(session_id: str, db: AsyncSession):
+    if not session_id:
+        return CartResponse(id=0, session_id="", items=[])
     cart = (await db.execute(select(Cart).filter(Cart.session_id == session_id))).scalars().first()
     if not cart:
         return CartResponse(id=0, session_id=session_id, items=[])
@@ -118,3 +148,12 @@ async def get_cart(session_id: str, db: AsyncSession = Depends(get_db)):
         session_id=cart.session_id,
         items=[CartItemResponse(product_id=i.product_id, quantity=i.quantity, price=i.price) for i in items]
     )
+
+@router.get("/cart/{session_id}", response_model=CartResponse)
+async def get_cart_by_path(session_id: str, db: AsyncSession = Depends(get_db)):
+    return await _fetch_cart_impl(session_id, db)
+
+@router.get("/cart", response_model=CartResponse)
+async def get_cart_by_query(session_id: str = "", db: AsyncSession = Depends(get_db)):
+    return await _fetch_cart_impl(session_id, db)
+
