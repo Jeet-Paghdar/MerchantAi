@@ -9,6 +9,8 @@
 
 <h1 align="center">MerchantAI</h1>
 
+<h2 align="center">Razorpay AI Buildathon 2026 — Track 01: AI Growth &amp; Agentic Commerce</h2>
+
 <h3 align="center">Autonomous Agentic Commerce Infrastructure</h3>
 
 <p align="center">
