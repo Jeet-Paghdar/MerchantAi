@@ -8,6 +8,23 @@ from checkout.razorpay_client import razorpay_client
 
 async def search_products(query: str, max_price: float = None, category: str = None) -> list:
     async with AsyncSessionLocal() as session:
+        # Preserve the customer's requested product type even when the agent
+        # sends a natural-language phrase rather than a catalog keyword.
+        query_text = (query or "").lower()
+        inferred_categories = {
+            "phone": "Phones",
+            "mobile": "Phones",
+            "laptop": "Laptops",
+            "headphone": "Audio",
+            "earbud": "Audio",
+            "speaker": "Audio",
+        }
+        if not category:
+            category = next(
+                (value for keyword, value in inferred_categories.items() if keyword in query_text),
+                None,
+            )
+
         stmt = select(Product)
         if category: stmt = stmt.filter(Product.category.ilike(f"%{category}%"))
         if max_price: stmt = stmt.filter(Product.price <= max_price)
@@ -21,7 +38,9 @@ async def search_products(query: str, max_price: float = None, category: str = N
             if not q or q in p.name.lower() or q in (p.description or "").lower() or q in (p.category or "").lower() or q in tags_str.lower():
                 matches.append(p)
         
-        # If no strict match, return top 4 items in category or generally
+        # For a broad request such as "phones under 15000", return only the
+        # already filtered category—not unrelated devices. Related products are
+        # offered separately after an item is added to the cart.
         if not matches and products:
             matches = products[:4]
             
