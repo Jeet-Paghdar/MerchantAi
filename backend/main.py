@@ -8,9 +8,18 @@ from audit.router import router as audit_router
 from campaigns.router import router as campaigns_router
 from pydantic import BaseModel
 from agent.core import AgentCore
-import random
+from agent.bounds import BoundsChecker
+from audit.logger import AuditLogger
+from catalog.models import Product
+from checkout.models import Cart, CartItem, Order, OrderStatus
+from checkout.razorpay_client import razorpay_client
+from config import settings
+from database import AsyncSessionLocal
+from sqlalchemy.future import select
 import asyncio
 import httpx
+import re
+import uuid
 
 import os
 from fastapi.staticfiles import StaticFiles
@@ -82,38 +91,90 @@ async def arena_start(req: ArenaStartRequest):
 @app.get("/api/arena/simulate")
 async def arena_simulate(task: str = "Buy me the best phone under ₹15,000"):
     task_lower = task.lower()
-    
-    if "charger" in task_lower or "powerbank" in task_lower or "battery" in task_lower:
-        prod = "Ambrane 10000mAh Powerbank"
-        list_price = 999
-        cost = 700
-        offer = 850
-    elif "headphone" in task_lower or "audio" in task_lower or "boat" in task_lower:
-        prod = "boAt Rockerz 450"
-        list_price = 899
-        cost = 600
-        offer = 750
-    else:
-        prod = "Redmi Note 14"
-        list_price = 12999
-        cost = 11000
-        offer = 12200
 
-    min_price = int(cost * 1.08)
-    discount = round(((list_price - offer) / list_price) * 100, 1)
+    if not settings.RAZORPAY_KEY_ID or not settings.RAZORPAY_KEY_SECRET:
+        return {
+            "status": "failed",
+            "events": [{"sender": "seller", "text": "⚠️ Razorpay test keys are required before an Arena deal can create a real payment order."}],
+            "result": {"reason": "Razorpay test-mode configuration is missing."},
+        }
+
+    category = "Accessories" if any(term in task_lower for term in ("charger", "powerbank", "battery")) else \
+        "Audio" if any(term in task_lower for term in ("headphone", "audio", "earbud", "speaker")) else \
+        "Laptops" if "laptop" in task_lower else "Phones"
+    budget_match = re.search(r"(?:under|below|within)\s*₹?\s*([\d,]+)", task_lower)
+    budget = float(budget_match.group(1).replace(",", "")) if budget_match else None
+
+    async with AsyncSessionLocal() as db:
+        statement = select(Product).filter(Product.category == category, Product.stock > 0)
+        if budget:
+            statement = statement.filter(Product.price <= budget)
+        product = (await db.execute(statement.order_by(Product.price.desc()))).scalars().first()
+        if not product:
+            return {
+                "status": "failed",
+                "events": [{"sender": "seller", "text": f"⚠️ No in-stock {category.lower()} matched the buyer agent's request."}],
+                "result": {"reason": "No eligible catalog item found."},
+            }
+
+        min_price = round(product.cost_price * 1.08, 2)
+        offer = max(min_price, round(product.price * 0.94, 2))
+        bounds = BoundsChecker.check_negotiate(offer, product.cost_price)
+        discount = round(((product.price - offer) / product.price) * 100, 1)
+        session_id = f"arena_{uuid.uuid4().hex}"
+        cart = Cart(session_id=session_id)
+        db.add(cart)
+        await db.flush()
+        db.add(CartItem(cart_id=cart.id, product_id=product.id, quantity=1, price=offer))
+
+        try:
+            rp_order = razorpay_client.create_order(int(offer * 100), receipt=f"arena_{cart.id}")
+        except Exception as error:
+            return {
+                "status": "failed",
+                "events": [{"sender": "seller", "text": "⚠️ The seller accepted the deal, but Razorpay could not create the payment order."}],
+                "result": {"reason": str(error)},
+            }
+
+        order = Order(
+            session_id=session_id,
+            cart_id=cart.id,
+            razorpay_order_id=rp_order["id"],
+            amount=offer,
+            status=OrderStatus.payment_pending,
+        )
+        db.add(order)
+        await db.commit()
+        await db.refresh(order)
+
+    await AuditLogger.log(
+        session_id,
+        "ARENA_ORDER_CREATED",
+        "seller_agent",
+        f"Buyer agent offer for {product.name} passed seller bounds and created a Razorpay payment order.",
+        bounds_check=bounds.__dict__,
+        gate_check={"buyer_authorization_required": True, "passed": False},
+        razorpay_api_call={"order_id": order.razorpay_order_id, "amount": order.amount},
+    )
 
     events = [
         {"sender": "buyer", "text": f"🔎 Buyer Agent initialized with goal: '{task}'. Scanning merchant catalog..."},
-        {"sender": "seller", "text": f"📦 Seller Agent: Found '{prod}' (Listed: ₹{list_price:,}, Stock: 14). Minimum authorized selling price: ₹{min_price:,}."},
+        {"sender": "seller", "text": f"📦 Seller Agent: Found '{product.name}' (Listed: ₹{product.price:,.0f}, Stock: {product.stock}). Minimum authorized selling price: ₹{min_price:,.0f}."},
         {"sender": "buyer", "text": f"🤝 Buyer Agent: Counter-offering ₹{offer:,} with immediate settlement via Razorpay."},
-        {"sender": "seller", "text": f"🛡️ Bounds Check: ₹{offer:,} > Cost Price + 8% margin (₹{min_price:,}). Bounds Passed ✓. Discount: {discount}%. Approving deal."},
-        {"sender": "seller", "text": f"✅ Deal Agreed at ₹{offer:,}! Creating Razorpay Order with gated authorization..."},
-        {"sender": "system", "text": f"💳 Razorpay Order ID created: order_sim_arena_{random.randint(1000,9999)}. Amount: ₹{offer:,}. Status: PAID."}
+        {"sender": "seller", "text": f"🛡️ Bounds Check: ₹{offer:,} ≥ Cost Price + 8% margin (₹{min_price:,.0f}). Bounds Passed ✓. Discount: {discount}%. Approving deal."},
+        {"sender": "seller", "text": f"✅ Deal accepted at ₹{offer:,}. A real Razorpay test-mode order has been created."},
+        {"sender": "seller", "text": "🔐 Awaiting buyer-side payment authorization and Razorpay signature verification before settlement."},
     ]
     return {
-        "status": "success",
+        "status": "payment_pending",
         "events": events,
-        "result": f"Deal Closed at ₹{offer:,} (Saved ₹{list_price - offer:,}) via Razorpay Agentic Wire"
+        "order_info": {
+            "order_id": order.id,
+            "razorpay_order_id": order.razorpay_order_id,
+            "amount": order.amount,
+            "items": [{"name": product.name, "price": order.amount, "quantity": 1}],
+        },
+        "result": f"Deal accepted at ₹{offer:,.0f} (Saved ₹{product.price - offer:,.0f}). Awaiting verified payment."
     }
 
 # Mount static files from frontend build if available

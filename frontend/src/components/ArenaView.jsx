@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { api } from '../api';
+import PaymentGate from './PaymentGate';
 
 export default function ArenaView() {
   const [task, setTask] = useState('Buy me the best phone under ₹15,000');
@@ -8,6 +9,8 @@ export default function ArenaView() {
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState(null); // 'success' | 'failed'
   const [result, setResult] = useState(null);
+  const [orderInfo, setOrderInfo] = useState(null);
+  const [showPayment, setShowPayment] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -22,6 +25,8 @@ export default function ArenaView() {
     setMessages([]);
     setStatus(null);
     setResult(null);
+    setOrderInfo(null);
+    setShowPayment(false);
 
     try {
       // Call start API
@@ -39,7 +44,11 @@ export default function ArenaView() {
         setMessages(prev => [...prev, events[i]]);
       }
       
-      if (response.status === 'success') {
+      if (response.status === 'payment_pending') {
+        setStatus('payment_pending');
+        setOrderInfo(response.order_info);
+        setResult(response.result);
+      } else if (response.status === 'success') {
         setStatus('success');
         setResult(response.result);
       } else {
@@ -119,10 +128,39 @@ export default function ArenaView() {
           ✅ {typeof result === 'string' ? result : `DEAL CLOSED — ₹${result?.amount?.toLocaleString() || '12,200'} via Razorpay`}
         </motion.div>
       )}
+      {status === 'payment_pending' && orderInfo && (
+        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="mt-6 bg-amber-100 border border-amber-300 text-amber-950 p-4 rounded-xl shadow-sm text-center">
+          <p className="font-bold text-lg">⏳ Deal accepted — payment verification pending</p>
+          <p className="text-sm mt-1">The seller has created a real Razorpay test-mode order. Settlement occurs only after verified buyer-side payment.</p>
+          <button
+            onClick={() => setShowPayment(true)}
+            className="mt-3 bg-[#0B69FF] text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors"
+          >
+            Complete Buyer Payment
+          </button>
+        </motion.div>
+      )}
       {status === 'failed' && (
         <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="mt-6 bg-[#E74C3C] text-white p-4 rounded-xl shadow-md text-center font-bold text-lg">
           ❌ DEAL FAILED — {result?.reason || 'Agents could not reach an agreement.'}
         </motion.div>
+      )}
+      {showPayment && orderInfo && (
+        <PaymentGate
+          orderInfo={orderInfo}
+          sessionId="arena-buyer"
+          onClose={() => setShowPayment(false)}
+          onSuccess={(message) => {
+            setShowPayment(false);
+            setStatus('success');
+            setResult(`Payment verified by Razorpay. ${message}`);
+          }}
+          onFailure={(message) => {
+            setShowPayment(false);
+            setStatus('failed');
+            setResult({ reason: message });
+          }}
+        />
       )}
     </div>
   );
