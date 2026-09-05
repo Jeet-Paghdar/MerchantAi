@@ -11,7 +11,7 @@ from agent.core import AgentCore
 from agent.bounds import BoundsChecker
 from audit.logger import AuditLogger
 from catalog.models import Product
-from checkout.models import Cart, CartItem, Order, OrderStatus
+from checkout.models import Cart, CartItem, Order, OrderStatus, Payment
 from checkout.razorpay_client import razorpay_client
 from config import settings
 from database import AsyncSessionLocal
@@ -144,6 +144,20 @@ async def arena_simulate(task: str = "Buy me the best phone under ₹15,000"):
             status=OrderStatus.payment_pending,
         )
         db.add(order)
+        await db.flush()
+
+        # Buildathon demo only: the buyer-side payment provider is represented
+        # by a deterministic simulated verification event. A production flow
+        # must call Razorpay Checkout and verify its returned HMAC signature.
+        simulated_payment_id = f"pay_arena_sim_{uuid.uuid4().hex[:12]}"
+        db.add(Payment(
+            order_id=order.id,
+            razorpay_payment_id=simulated_payment_id,
+            razorpay_signature="simulated_buildathon_verification",
+            amount=offer,
+            status="simulated_verified",
+        ))
+        order.status = OrderStatus.paid
         await db.commit()
         await db.refresh(order)
 
@@ -151,10 +165,10 @@ async def arena_simulate(task: str = "Buy me the best phone under ₹15,000"):
         session_id,
         "ARENA_ORDER_CREATED",
         "seller_agent",
-        f"Buyer agent offer for {product.name} passed seller bounds and created a Razorpay payment order.",
+        f"Buyer agent offer for {product.name} passed seller bounds. A Razorpay test-mode order was created and settled with simulated Buildathon payment verification.",
         bounds_check=bounds.__dict__,
-        gate_check={"buyer_authorization_required": True, "passed": False},
-        razorpay_api_call={"order_id": order.razorpay_order_id, "amount": order.amount},
+        gate_check={"buyer_authorization_required": True, "simulated_for_demo": True, "passed": True},
+        razorpay_api_call={"order_id": order.razorpay_order_id, "payment_id": simulated_payment_id, "amount": order.amount, "verification": "simulated_buildathon_demo"},
     )
 
     events = [
@@ -163,18 +177,12 @@ async def arena_simulate(task: str = "Buy me the best phone under ₹15,000"):
         {"sender": "buyer", "text": f"🤝 Buyer Agent: Counter-offering ₹{offer:,} with immediate settlement via Razorpay."},
         {"sender": "seller", "text": f"🛡️ Bounds Check: ₹{offer:,} ≥ Cost Price + 8% margin (₹{min_price:,.0f}). Bounds Passed ✓. Discount: {discount}%. Approving deal."},
         {"sender": "seller", "text": f"✅ Deal accepted at ₹{offer:,}. A real Razorpay test-mode order has been created."},
-        {"sender": "seller", "text": "🔐 Awaiting buyer-side payment authorization and Razorpay signature verification before settlement."},
+        {"sender": "seller", "text": "🧪 Buildathon demo: simulated buyer-side payment verification recorded. The merchant order is now settled locally."},
     ]
     return {
-        "status": "payment_pending",
+        "status": "success",
         "events": events,
-        "order_info": {
-            "order_id": order.id,
-            "razorpay_order_id": order.razorpay_order_id,
-            "amount": order.amount,
-            "items": [{"name": product.name, "price": order.amount, "quantity": 1}],
-        },
-        "result": f"Deal accepted at ₹{offer:,.0f} (Saved ₹{product.price - offer:,.0f}). Awaiting verified payment."
+        "result": f"Deal settled at ₹{offer:,.0f} (Saved ₹{product.price - offer:,.0f}) — simulated Razorpay test-mode payment verification for the Buildathon demo."
     }
 
 # Mount static files from frontend build if available
