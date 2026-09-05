@@ -1,6 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
+function renderInlineMarkdown(text) {
+  const parts = String(text).split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
 export default function MessageBubble({ message }) {
   const isAgent = message.role === 'agent';
   
@@ -17,7 +27,7 @@ export default function MessageBubble({ message }) {
             : 'bg-[#0B69FF] text-white rounded-2xl rounded-br-sm'
         }`}
       >
-        {message.text}
+        {renderInlineMarkdown(message.text)}
       </div>
       <span className={`text-[10px] mt-1 text-gray-400 ${isAgent ? 'text-left ml-1' : 'text-right mr-1'}`}>
         {message.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

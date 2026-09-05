@@ -80,7 +80,7 @@ async def arena_start(req: ArenaStartRequest):
     return {"status": "started", "messages": [{"role": "buyer", "content": req.task}]}
 
 @app.get("/api/arena/simulate")
-async def arena_simulate(task: str = "Buy me the best phone under ?15,000"):
+async def arena_simulate(task: str = "Buy me the best phone under ₹15,000"):
     task_lower = task.lower()
     
     if "charger" in task_lower or "powerbank" in task_lower or "battery" in task_lower:
@@ -103,12 +103,12 @@ async def arena_simulate(task: str = "Buy me the best phone under ?15,000"):
     discount = round(((list_price - offer) / list_price) * 100, 1)
 
     events = [
-        {"sender": "buyer", "text": f"?? Buyer Agent initialized with goal: '{task}'. Scanning merchant catalog..."},
-        {"sender": "seller", "text": f"?? Seller Agent: Found '{prod}' (Listed: ?{list_price:,}, Stock: 14). Minimum authorized selling price: ?{min_price:,}."},
-        {"sender": "buyer", "text": f"?? Buyer Agent: Counter-offering ?{offer:,} with immediate settlement via Razorpay."},
-        {"sender": "seller", "text": f"?? Bounds Check: ?{offer:,} > Cost Price + 8% margin (?{min_price:,}). Bounds Passed ?. Discount: {discount}%. Approving deal."},
-        {"sender": "seller", "text": f"?? Deal Agreed at ?{offer:,}! Creating Razorpay Order with gated authorization..."},
-        {"sender": "system", "text": f"? Razorpay Order ID created: order_sim_arena_{random.randint(1000,9999)}. Amount: ?{offer:,}. Status: PAID."}
+        {"sender": "buyer", "text": f"🔎 Buyer Agent initialized with goal: '{task}'. Scanning merchant catalog..."},
+        {"sender": "seller", "text": f"📦 Seller Agent: Found '{prod}' (Listed: ₹{list_price:,}, Stock: 14). Minimum authorized selling price: ₹{min_price:,}."},
+        {"sender": "buyer", "text": f"🤝 Buyer Agent: Counter-offering ₹{offer:,} with immediate settlement via Razorpay."},
+        {"sender": "seller", "text": f"🛡️ Bounds Check: ₹{offer:,} > Cost Price + 8% margin (₹{min_price:,}). Bounds Passed ✓. Discount: {discount}%. Approving deal."},
+        {"sender": "seller", "text": f"✅ Deal Agreed at ₹{offer:,}! Creating Razorpay Order with gated authorization..."},
+        {"sender": "system", "text": f"💳 Razorpay Order ID created: order_sim_arena_{random.randint(1000,9999)}. Amount: ₹{offer:,}. Status: PAID."}
     ]
     return {
         "status": "success",
